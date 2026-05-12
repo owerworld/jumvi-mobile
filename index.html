@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>JUMVI — Finansal Plan</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="JUMVI">
+<meta name="theme-color" content="#0c0c0c">
+<link rel="manifest" href='data:application/manifest+json;charset=utf-8,{"name":"JUMVI","short_name":"JUMVI","start_url":".","display":"standalone","background_color":"%230c0c0c","theme_color":"%230c0c0c","orientation":"portrait-primary","icons":[{"src":"data:image/svg%2Bxml;utf8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 192 192%22%3E%3Crect width=%22192%22 height=%22192%22 rx=%2234%22 fill=%22%230c0c0c%22/%3E%3Crect width=%22192%22 height=%2232%22 rx=%2234%22 fill=%22%234FB3FF%22/%3E%3Ctext x=%2296%22 y=%22120%22 font-family=%22Arial Black,sans-serif%22 font-size=%2256%22 font-weight=%22900%22 text-anchor=%22middle%22 fill=%22%23ede9e0%22%3EJUMVI%3C/text%3E%3C/svg%3E","sizes":"192x192","type":"image/svg+xml","purpose":"any maskable"}]}'>
+<link rel="apple-touch-icon" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" rx="34" fill="%230c0c0c"/><rect width="192" height="32" rx="34" fill="%234FB3FF"/><text x="96" y="120" font-family="Arial Black,sans-serif" font-size="56" font-weight="900" text-anchor="middle" fill="%23ede9e0">JUMVI</text></svg>'>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#4FB3FF;--green:#97D700;--orange:#FF6A00;
+  --bg:#0c0c0c;--bg2:#141414;--bg3:#1c1c1c;--bg4:#232323;
+  --bd:rgba(255,255,255,.07);--bd2:rgba(255,255,255,.13);--bd3:rgba(255,255,255,.22);
+  --t:#ede9e0;--t2:#9a9690;--t3:#606060;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+  --red:#ff5a5a;--amber:#f0a828;
+}
+body{background:var(--bg);color:var(--t);font-family:var(--sans);font-size:14px;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* ─ Header ─ */
+.hdr{display:flex;align-items:center;gap:12px;padding:14px 24px;border-bottom:1px solid var(--bd2);flex-shrink:0;background:var(--bg2)}
+.logo{font-family:var(--mono);font-size:19px;font-weight:600;letter-spacing:.07em;color:var(--blue)}
+.hdr-sep{width:1px;height:18px;background:var(--bd2)}
+.hdr-sub{font-size:11px;color:var(--t3);letter-spacing:.07em;text-transform:uppercase}
+.hdr-r{margin-left:auto;display:flex;gap:8px;align-items:center}
+.kbadge{font-family:var(--mono);font-size:11px;color:var(--t3);background:var(--bg3);border:1px solid var(--bd2);padding:4px 10px;border-radius:5px}
+.hbtn{font-size:11px;font-weight:500;padding:6px 13px;border-radius:6px;border:1px solid var(--bd3);background:transparent;color:var(--t3);cursor:pointer;font-family:var(--sans);transition:all .15s;white-space:nowrap}
+.hbtn:hover{background:var(--bg3);color:var(--t);border-color:rgba(255,255,255,.3)}
+.hbtn.imp{color:rgba(79,179,255,.7);border-color:rgba(79,179,255,.25)}
+.hbtn.imp:hover{background:rgba(79,179,255,.08);color:var(--blue)}
+
+/* ─ Tabs ─ */
+.tabs{display:flex;padding:0 24px;border-bottom:1px solid var(--bd2);flex-shrink:0;background:var(--bg2)}
+.tab{font-size:11px;font-weight:600;padding:11px 18px;cursor:pointer;color:var(--t3);border-bottom:2px solid transparent;transition:all .15s;letter-spacing:.06em;text-transform:uppercase;user-select:none}
+.tab:hover{color:var(--t2)}
+.tab.on{color:var(--blue);border-bottom-color:var(--blue)}
+
+/* ─ Content area ─ */
+.content{flex:1;overflow-y:auto;padding:22px 24px}
+
+/* ─ Summary cards ─ */
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.card{background:var(--bg2);border:1px solid var(--bd2);border-radius:10px;padding:15px 17px}
+.card-lbl{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:8px;font-weight:600}
+.card-val{font-family:var(--mono);font-size:19px;font-weight:600;letter-spacing:.02em;line-height:1.2}
+.card-sub{font-size:11px;color:var(--t3);margin-top:4px;font-family:var(--mono)}
+.card-usd{font-family:var(--mono);font-size:13px;font-weight:600;color:rgba(79,179,255,.8);margin-top:3px;letter-spacing:.01em}
+
+/* ─ Table ─ */
+.tbl-wrap{border:1px solid var(--bd2);border-radius:10px;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+thead th{font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--t3);text-align:left;padding:10px 14px;background:var(--bg3);border-bottom:1px solid var(--bd3);white-space:nowrap;font-weight:600}
+td{padding:10px 14px;vertical-align:top}
+tr.wr{border-bottom:1px solid var(--bd);transition:background .1s}
+tr.wr.drag-over td{background:rgba(79,179,255,.08)!important;outline:2px dashed rgba(79,179,255,.5);outline-offset:-2px}
+tr.wr.now-row td{background:rgba(79,179,255,.05)}
+tr.wr.now-row td:first-child{box-shadow:inset 3px 0 0 var(--blue)}
+.jump-btn{position:fixed;right:14px;bottom:60px;z-index:99;background:var(--blue);color:#042C53;border:none;border-radius:50%;width:46px;height:46px;font-size:18px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;font-family:var(--sans)}
+@media (max-width: 720px){.jump-btn{display:flex}}
+.ei{cursor:grab}.ei.dragging{opacity:.4;cursor:grabbing}
+tr.wr:last-child{border-bottom:none}
+tr.wr:hover td{background:rgba(255,255,255,.02)}
+tr.sep td{padding:5px 14px;background:var(--bg3);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);border-top:1px solid var(--bd2);border-bottom:1px solid var(--bd2);font-weight:600}
+tr.mth td{padding:4px 14px;background:rgba(79,179,255,.04);border-top:1px solid rgba(79,179,255,.12);border-bottom:1px solid rgba(79,179,255,.08);font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:rgba(79,179,255,.55);font-weight:600;font-family:var(--mono)}
+
+.dc{font-family:var(--mono);font-weight:600;font-size:14px}
+.dd{font-size:11px;color:var(--t3);margin-top:2px}
+.chip{display:inline-block;font-size:9px;letter-spacing:.05em;font-weight:600;padding:2px 7px;border-radius:3px;margin-top:5px;margin-right:3px;text-transform:uppercase}
+.c-now{background:rgba(79,179,255,.14);color:var(--blue);border:1px solid rgba(79,179,255,.28)}
+.c-qc{background:rgba(151,215,0,.12);color:var(--green);border:1px solid rgba(151,215,0,.28)}
+.addv{font-family:var(--mono);font-size:13px;color:var(--t3)}
+.addv.on{color:var(--green);font-weight:600}
+.bn{font-family:var(--mono);font-size:14px;font-weight:600;letter-spacing:.02em}
+.bu{font-family:var(--mono);font-size:12px;color:rgba(79,179,255,.7);margin-top:3px;letter-spacing:.01em}
+.pe{font-family:var(--mono);font-size:11px;color:var(--orange);margin-top:5px}
+.el{display:flex;flex-direction:column;gap:3px;min-width:180px}
+.ei{display:flex;align-items:center;gap:6px;font-size:12px;padding:5px 9px;border-radius:6px;background:rgba(255,85,85,.06);border:1px solid rgba(255,85,85,.1)}
+.ei.usd{background:rgba(240,168,40,.05);border-color:rgba(240,168,40,.18)}
+.en{flex:1;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}
+.ea{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--red);white-space:nowrap}
+.ea-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:1px}
+.ea-orig{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--amber);white-space:nowrap}
+.ea-conv{font-family:var(--mono);font-size:10px;color:var(--t3);white-space:nowrap}
+.ed{cursor:pointer;color:var(--t3);font-size:11px;width:16px;text-align:center;opacity:.5;transition:opacity .1s,color .1s;flex-shrink:0}
+.drag-handle{color:var(--t3);font-size:11px;opacity:.35;flex-shrink:0;cursor:grab;user-select:none;margin-right:2px}
+.ed:hover{opacity:1;color:var(--red)}
+
+/* ─ Category chips ─ */
+.cat-chip{display:inline-block;font-size:8px;letter-spacing:.05em;font-weight:700;padding:1px 5px;border-radius:3px;text-transform:uppercase;margin-right:4px;vertical-align:middle;flex-shrink:0}
+.cat-tedarik{background:rgba(151,215,0,.14);color:#97D700;border:1px solid rgba(151,215,0,.28)}
+.cat-kargo{background:rgba(79,179,255,.12);color:#4FB3FF;border:1px solid rgba(79,179,255,.24)}
+.cat-amazon{background:rgba(255,106,0,.12);color:#FF6A00;border:1px solid rgba(255,106,0,.24)}
+.cat-reklam{background:rgba(240,168,40,.12);color:#f0a828;border:1px solid rgba(240,168,40,.24)}
+.cat-vine{background:rgba(167,139,250,.12);color:#a78bfa;border:1px solid rgba(167,139,250,.24)}
+.cat-diger{background:rgba(96,96,96,.14);color:#909090;border:1px solid rgba(96,96,96,.28)}
+
+/* ─ Milestone timeline ─ */
+.timeline{display:flex;flex-direction:column;gap:0;max-width:640px}
+.ms-item{display:flex;align-items:flex-start;gap:0}
+.ms-dot-col{display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:44px}
+.ms-dot{width:22px;height:22px;border-radius:50%;border:2px solid var(--bd3);background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;transition:all .2s;user-select:none}
+.ms-dot.done{background:var(--green);border-color:var(--green);color:#042c10;font-weight:700;box-shadow:0 0 10px rgba(151,215,0,.25)}
+.ms-line{width:2px;flex:1;min-height:20px;background:var(--bd2)}
+.ms-body{flex:1;padding:2px 0 28px 10px}
+.ms-name{font-size:14px;font-weight:600;color:var(--t2);margin-bottom:8px;transition:color .2s}
+.ms-name.done{color:var(--green)}
+.ms-date-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ms-date-inp{font-size:12px;padding:5px 9px;border:1px solid var(--bd3);border-radius:5px;background:var(--bg3);color:var(--t2);font-family:var(--mono);outline:none;width:140px;transition:border-color .15s}
+.ms-date-inp:focus{border-color:var(--blue)}
+.ms-toggle{font-size:11px;padding:5px 12px;border-radius:5px;border:1px solid var(--bd3);background:transparent;color:var(--t3);cursor:pointer;font-family:var(--sans);transition:all .15s}
+.ms-toggle:hover{color:var(--green);border-color:rgba(151,215,0,.4);background:rgba(151,215,0,.05)}
+.ms-toggle.done:hover{color:var(--red);border-color:rgba(255,85,85,.4);background:rgba(255,85,85,.05)}
+.ms-prog{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-bottom:24px}
+.ms-prog-bar{height:100%;border-radius:3px;transition:width .5s ease}
+
+/* ─ Birim Ekonomisi ─ */
+.ue-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:860px;margin-bottom:14px}
+.ue-card{background:var(--bg2);border:1px solid var(--bd2);border-radius:10px;padding:20px}
+.ue-ttl{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);font-weight:600;margin-bottom:16px}
+.ue-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--bd)}
+.ue-row:last-child{border-bottom:none}
+.ue-lbl{font-size:13px;color:var(--t2)}
+.ue-val{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--t);text-align:right}
+.ue-val.pos{color:var(--green)}.ue-val.neg{color:var(--red)}.ue-val.neu{color:var(--blue)}.ue-val.warn{color:var(--amber)}
+.ue-big{font-size:22px}
+.ue-sub2{font-size:11px;color:var(--t3);font-family:var(--mono)}
+.ue-inp-grid{display:flex;flex-wrap:wrap;gap:10px}
+.ue-fg{display:flex;flex-direction:column;gap:5px;flex:1;min-width:110px}
+.ue-fg label{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);font-weight:600}
+.ue-fg input{font-size:14px;padding:9px 11px;border:1px solid var(--bd3);border-radius:7px;background:var(--bg3);color:var(--t);font-family:var(--mono);outline:none;transition:border-color .15s}
+.ue-fg input:focus{border-color:var(--blue)}
+.ue-save{margin-top:14px;font-size:13px;font-weight:600;padding:9px 20px;border-radius:7px;border:none;background:var(--blue);color:#042C53;cursor:pointer;font-family:var(--sans);transition:opacity .15s}
+.ue-save:hover{opacity:.85}
+
+/* ─ Recurring / Sabit Giderler ─ */
+.rec-list{margin-bottom:14px}
+.rec-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bd);flex-wrap:wrap}
+.rec-item:last-child{border-bottom:none}
+.rec-name{flex:1;font-size:13px;color:var(--t2);min-width:120px}
+.rec-amt{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--amber);white-space:nowrap}
+.rec-start{font-size:10px;color:var(--t3);font-family:var(--mono)}
+.rec-act{font-size:10px;padding:3px 9px;border-radius:4px;border:1px solid var(--bd3);background:transparent;cursor:pointer;font-family:var(--sans);transition:all .15s;white-space:nowrap}
+.rec-act.on{color:var(--green);border-color:rgba(151,215,0,.35)}
+.rec-act.off{color:var(--t3)}
+.rec-act.sched{color:var(--blue);border-color:rgba(79,179,255,.3)}
+.rec-del{cursor:pointer;color:var(--t3);font-size:12px;opacity:.5;flex-shrink:0;transition:all .15s;background:none;border:none;padding:0}
+.rec-del:hover{opacity:1;color:var(--red)}
+.rec-add-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;padding-top:14px;border-top:1px solid var(--bd2)}
+.pe-rec{font-family:var(--mono);font-size:11px;color:var(--amber);margin-top:4px}
+
+/* ─ Balance colors ─ */
+.bg{color:var(--green)}.ba{color:var(--amber)}.br{color:var(--red)}
+
+/* ─ FAB + Form ─ */
+.fab{margin-top:16px;display:flex;gap:8px;align-items:center}
+.add-btn{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;padding:9px 18px;border-radius:7px;border:1px solid var(--bd3);background:var(--bg2);color:var(--t2);cursor:pointer;font-family:var(--sans);transition:all .15s}
+.add-btn:hover{background:var(--bg3);color:var(--t);border-color:rgba(255,255,255,.3)}
+.add-btn.on{border-color:var(--blue);color:var(--blue);background:rgba(79,179,255,.07)}
+.form-box{background:var(--bg2);border:1px solid var(--bd3);border-radius:10px;padding:20px;margin-top:12px;animation:sli .15s ease}
+@keyframes sli{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+.fttl{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:14px;font-weight:600}
+.fields{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fg label{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);font-weight:600}
+.fg input,.fg select{font-size:14px;padding:9px 11px;border:1px solid var(--bd3);border-radius:7px;background:var(--bg3);color:var(--t);font-family:var(--sans);outline:none;transition:border-color .15s}
+.fg input:focus,.fg select:focus{border-color:var(--blue)}
+.fg select option{background:var(--bg3)}
+.fg-n{flex:1 1 200px}.fg-a{flex:0 0 110px}.fg-c{flex:0 0 72px}.fg-w{flex:1 1 180px}.fg-cat{flex:0 0 130px}
+.bok{font-size:13px;font-weight:600;padding:9px 20px;border-radius:7px;border:none;background:var(--blue);color:#042C53;cursor:pointer;font-family:var(--sans);transition:opacity .15s}
+.bok:hover{opacity:.85}
+.bca{font-size:13px;padding:9px 14px;border-radius:7px;border:1px solid var(--bd3);background:transparent;color:var(--t3);cursor:pointer;font-family:var(--sans)}
+.bca:hover{color:var(--t);border-color:rgba(255,255,255,.3)}
+.prev{font-family:var(--mono);font-size:11px;color:rgba(79,179,255,.75);margin-top:8px;min-height:16px}
+
+/* ─ Footer ─ */
+.foot{padding:10px 24px;border-top:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--t3);font-family:var(--mono);flex-wrap:wrap;gap:8px;flex-shrink:0;background:var(--bg2)}
+.clbtn{font-size:10px;padding:4px 10px;border-radius:5px;border:1px solid rgba(255,85,85,.22);background:transparent;color:rgba(255,85,85,.45);cursor:pointer;font-family:var(--mono);transition:all .15s}
+.clbtn:hover{border-color:var(--red);color:var(--red)}
+
+/* ─ Chart ─ */
+.chart-wrap{background:var(--bg2);border:1px solid var(--bd2);border-radius:10px;padding:20px;height:430px;position:relative}
+
+/* ─ Settings ─ */
+.sgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;max-width:640px}
+.sc{background:var(--bg2);border:1px solid var(--bd2);border-radius:10px;padding:20px}
+.sc-ttl{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);font-weight:600;margin-bottom:16px}
+.sfg{display:flex;flex-direction:column;gap:5px;margin-bottom:11px}
+.sfg:last-of-type{margin-bottom:0}
+.sfg label{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);font-weight:600}
+.sfg input,.sfg select{font-size:14px;padding:9px 11px;border:1px solid var(--bd3);border-radius:7px;background:var(--bg3);color:var(--t);font-family:var(--mono);outline:none;transition:border-color .15s}
+.sfg input:focus,.sfg select:focus{border-color:var(--blue)}
+.sfg select option{background:var(--bg3)}
+.sbtn{margin-top:16px;font-size:13px;font-weight:600;padding:9px 20px;border-radius:7px;border:none;background:var(--blue);color:#042C53;cursor:pointer;font-family:var(--sans);transition:opacity .15s}
+.sbtn:hover{opacity:.85}
+.sok{font-size:11px;color:var(--green);font-family:var(--mono);margin-top:10px;min-height:16px}
+
+/* ─ Mobile (iPhone / dar ekran) ─ */
+@media (max-width: 720px) {
+  body{font-size:15px;padding-bottom:env(safe-area-inset-bottom)}
+  .hdr{padding:10px 14px;gap:8px;flex-wrap:wrap;padding-top:max(10px,env(safe-area-inset-top))}
+  .logo{font-size:16px}
+  .hdr-sep,.hdr-sub{display:none}
+  .hdr-r{margin-left:0;width:100%;justify-content:flex-start;flex-wrap:wrap;gap:6px;order:2}
+  .kbadge{font-size:10px;padding:3px 8px}
+  .hbtn{font-size:11px;padding:6px 10px;flex:1;min-width:0;text-align:center}
+  .tabs{padding:0 8px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{padding:11px 14px;font-size:10px;flex-shrink:0}
+  .content{padding:14px 12px}
+  .cards{grid-template-columns:1fr;gap:8px;margin-bottom:14px}
+  .card{padding:12px 14px}
+  .card-val{font-size:17px}
+  thead{display:none}
+  table,tbody,tr,td{display:block;width:100%}
+  tr.wr{border:1px solid var(--bd2);border-radius:10px;margin-bottom:10px;padding:12px;background:var(--bg2)}
+  tr.wr.drag-over{outline:2px dashed rgba(79,179,255,.5)}
+  tr.wr td{padding:4px 0;border:none}
+  tr.wr td:nth-child(1){display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--bd);padding-bottom:8px;margin-bottom:8px}
+  tr.wr td:nth-child(2){display:inline-block;padding-right:14px}
+  tr.wr td:nth-child(3){display:inline-block;padding-bottom:8px}
+  tr.wr td:nth-child(4):empty{display:none}
+  tr.sep td,tr.mth td{display:block;border-radius:6px;margin-bottom:8px;padding:6px 10px}
+  .tbl-wrap{border:none;background:transparent}
+  .ei{font-size:13px;padding:8px 10px;gap:8px}
+  .ed{font-size:14px;width:24px;height:24px;line-height:24px;opacity:.75}
+  .ea{font-size:13px}
+  .en{max-width:none;font-size:13px}
+  .ue-grid,.sgrid{grid-template-columns:1fr;gap:10px}
+  .ue-card,.sc{padding:16px}
+  .ue-big{font-size:19px}
+  .form-box{padding:14px}
+  .fields{flex-direction:column;align-items:stretch}
+  .fg,.fg-n,.fg-a,.fg-c,.fg-w,.fg-cat{flex:1 1 auto;width:100%}
+  .bok,.bca{width:100%}
+  .add-btn{width:100%;justify-content:center;padding:13px 18px;font-size:14px}
+  .timeline{max-width:100%}
+  .ms-date-inp{flex:1;min-width:0;width:auto}
+  .rec-add-row{flex-direction:column;align-items:stretch}
+  .rec-item{padding:12px 0}
+  .rec-act,.rec-del{font-size:12px}
+  .chart-wrap{height:320px;padding:14px}
+  .foot{padding:8px 14px;font-size:10px;padding-bottom:max(8px,env(safe-area-inset-bottom))}
+  .drag-handle{font-size:16px;padding:4px}
+}
+@media (max-width: 720px) and (display-mode: standalone) {
+  body{padding-top:env(safe-area-inset-top)}
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <span class="logo">JUMVI</span>
+  <span class="hdr-sep"></span>
+  <span class="hdr-sub">Finansal Planlayici</span>
+  <div class="hdr-r">
+    <span class="kbadge" id="kbadge">Kur: 44 ₺/$</span>
+    <span class="kbadge" id="gbadge" style="color:var(--amber)">⬡ —</span>
+    <button class="hbtn" style="color:var(--green);border-color:rgba(151,215,0,.3)" onclick="downloadCal()">📅 Takvim</button>
+    <button class="hbtn" style="color:var(--amber);border-color:rgba(240,168,40,.3)" onclick="downloadPdf()">📄 PDF</button>
+    <button class="hbtn" onclick="doExport()">↓ JSON</button>
+    <button class="hbtn imp" onclick="document.getElementById('impFile').click()">↑ JSON</button>
+    <input type="file" id="impFile" accept=".json" style="display:none" onchange="doImport(this)">
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab on" id="tab-tablo"   onclick="switchTab('tablo')">Tablo</div>
+  <div class="tab"    id="tab-grafik"  onclick="switchTab('grafik')">Grafik</div>
+  <div class="tab"    id="tab-birim"   onclick="switchTab('birim')">Birim</div>
+  <div class="tab"    id="tab-plan"    onclick="switchTab('plan')">Plan</div>
+  <div class="tab"    id="tab-ayarlar" onclick="switchTab('ayarlar')">Ayarlar</div>
+</div>
+
+<div class="content" id="content"></div>
+<div class="foot"    id="foot"></div>
+
+<script>
+let CFG = {startDate:'2026-03-26',startBal:176640,weekly:10000,payAmt:147000,payDate:'2026-04-09',rate:44,weeks:41};
+let EXP = [], MILESTONES = [], RECURRING = [];
+let showForm  = false;
+let activeTab = 'tablo';
+let chartInst = null, donutInst = null;
+
+const CAT_COLORS = {tedarik:'#97D700',kargo:'#4FB3FF',amazon:'#FF6A00',reklam:'#f0a828',vine:'#a78bfa',diger:'#606060'};
+const CAT_LABELS = {tedarik:'Tedarik',kargo:'Kargo/DDP',amazon:'Amazon/FBA',reklam:'Reklam/PPC',vine:'Vine',diger:'Diger'};
+const MS_META = {
+  ms1:{label:'QC Kontrolu',     icon:'🔍'},
+  ms2:{label:'Uretim Tamamlandi', icon:'🏭'},
+  ms3:{label:'Kargo / DDP',     icon:'🚢'},
+  ms4:{label:'FBA Warehouse',   icon:'📦'},
+  ms5:{label:'Listeleme Yayinda',icon:'🛒'},
+  ms6:{label:'Ilk Siparis',     icon:'🎉'},
+  ms7:{label:'Vine Basvurusu',  icon:'🌿'},
+  ms8:{label:'Ilk Organik Review',icon:'⭐'},
+};
+
+// ─ localStorage Adapter (sunucusuz) ──────────────────────────────────────
+
+const LS = {
+  get(k, d) { try { return JSON.parse(localStorage.getItem('jumvi_'+k)) ?? d; } catch { return d; } },
+  set(k, v) { localStorage.setItem('jumvi_'+k, JSON.stringify(v)); },
+};
+
+// İlk çalıştırmada varsayılanlar
+(function seed() {
+  if (!LS.get('cfg')) LS.set('cfg', {
+    startDate:'2026-04-25', startBal:'180000', weekly:'10000',
+    payAmt:'147000', payDate:'2026-04-09', rate:'44', weeks:'41',
+    goldQty:'0', goldPrice:'0', price_usd:'0', cogs_usd:'0',
+    fba_fee:'0', ref_pct:'15', units:'0', bot_chat_id:'',
+  });
+  if (!LS.get('exp')) LS.set('exp', []);
+  if (!LS.get('milestones')) LS.set('milestones', [
+    {id:'ms1', name:'QC Kontrolu', ddate:'2026-04-09', done:0},
+    {id:'ms2', name:'Uretim Tamamlandi', ddate:'', done:0},
+    {id:'ms3', name:'Kargo / DDP Sevkiyat', ddate:'', done:0},
+    {id:'ms4', name:'FBA Warehouse Teslim', ddate:'', done:0},
+    {id:'ms5', name:'Listeleme Yayinda', ddate:'', done:0},
+    {id:'ms6', name:'Ilk Siparis', ddate:'', done:0},
+    {id:'ms7', name:'Vine Basvurusu', ddate:'', done:0},
+    {id:'ms8', name:'Ilk Organik Review', ddate:'', done:0},
+  ]);
+  if (!LS.get('recurring')) LS.set('recurring', [
+    {id:'rr1', name:'Amazon Seller', amt_usd:40, category:'amazon', active:1, start_date:''},
+    {id:'rr2', name:'Claude AI', amt_usd:24, category:'diger', active:1, start_date:''},
+    {id:'rr3', name:'VPS', amt_usd:15, category:'diger', active:1, start_date:''},
+    {id:'rr4', name:'Helium 10', amt_usd:25, category:'reklam', active:1, start_date:''},
+  ]);
+})();
+
+// Canlı kur (TCMB) — CORS proxy ile, başarısız olursa null döner
+async function fetchLiveRate() {
+  const url = 'https://www.tcmb.gov.tr/kurlar/today.xml';
+  for (const proxy of ['https://api.allorigins.win/raw?url=', 'https://corsproxy.io/?']) {
+    try {
+      const r = await fetch(proxy + encodeURIComponent(url), {cache:'no-store'});
+      const txt = await r.text();
+      const doc = new DOMParser().parseFromString(txt, 'text/xml');
+      const usd = doc.querySelector('Currency[CurrencyCode="USD"]');
+      const val = parseFloat(usd.querySelector('ForexSelling').textContent);
+      if (val > 0) return {ok:true, rate: Math.round(val*100)/100};
+    } catch {}
+  }
+  return {ok:false};
+}
+
+// Canlı çeyrek altın (truncgil)
+async function fetchLiveGold() {
+  const url = 'https://finans.truncgil.com/v4/today.json';
+  for (const proxy of ['', 'https://api.allorigins.win/raw?url=', 'https://corsproxy.io/?']) {
+    try {
+      const u = proxy ? proxy + encodeURIComponent(url) : url;
+      const r = await fetch(u, {cache:'no-store'});
+      const data = await r.json();
+      const item = data.CEYREKALTIN || {};
+      const alis = parseFloat(item.Buying), satis = parseFloat(item.Selling);
+      if (alis > 0) return {ok:true, alis: Math.round(alis*100)/100, satis: Math.round(satis*100)/100};
+    } catch {}
+  }
+  return {ok:false};
+}
+
+// API uyumluluk katmanı — orijinal kodu değiştirmemek için
+async function api(method, path, data) {
+  const id = path.split('/').slice(-1)[0];
+
+  if (method === 'GET') {
+    if (path === '/api/data')       return {cfg: LS.get('cfg',{}), exp: LS.get('exp',[])};
+    if (path === '/api/milestones') return LS.get('milestones', []);
+    if (path === '/api/recurring')  return LS.get('recurring', []);
+    if (path === '/api/rate')       return await fetchLiveRate();
+    if (path === '/api/gold')       return await fetchLiveGold();
+  }
+
+  if (method === 'POST') {
+    if (path === '/api/cfg') {
+      const c = LS.get('cfg', {}); Object.assign(c, data); LS.set('cfg', c);
+      return {ok:true};
+    }
+    if (path === '/api/exp') {
+      const xs = LS.get('exp', []); xs.push(data); LS.set('exp', xs);
+      return {ok:true};
+    }
+    if (path.startsWith('/api/exp/')) {
+      const xs = LS.get('exp', []);
+      const i = xs.find(x => x.id === id);
+      if (i) { i.wdate = data.wdate; LS.set('exp', xs); }
+      return {ok:true};
+    }
+    if (path === '/api/milestone') {
+      const xs = LS.get('milestones', []);
+      const i = xs.findIndex(m => m.id === data.id);
+      if (i >= 0) xs[i] = {...xs[i], ...data}; else xs.push(data);
+      LS.set('milestones', xs);
+      return {ok:true};
+    }
+    if (path === '/api/recurring') {
+      const xs = LS.get('recurring', []);
+      const i = xs.findIndex(r => r.id === data.id);
+      if (i >= 0) xs[i] = {...xs[i], ...data}; else xs.push(data);
+      LS.set('recurring', xs);
+      return {ok:true};
+    }
+    if (path === '/api/import') {
+      if (data.cfg) LS.set('cfg', {...LS.get('cfg',{}), ...data.cfg});
+      const exp = (data.exp || data.expenses || []).map(e => ({...e, wdate: e.wdate || e.d}));
+      LS.set('exp', exp);
+      return {ok:true, imported: exp.length};
+    }
+  }
+
+  if (method === 'DELETE') {
+    if (path.startsWith('/api/exp/'))       { LS.set('exp', LS.get('exp',[]).filter(e=>e.id!==id)); return {ok:true}; }
+    if (path.startsWith('/api/milestone/')) { LS.set('milestones', LS.get('milestones',[]).filter(m=>m.id!==id)); return {ok:true}; }
+    if (path.startsWith('/api/recurring/')) { LS.set('recurring', LS.get('recurring',[]).filter(r=>r.id!==id)); return {ok:true}; }
+  }
+
+  return {ok:false};
+}
+
+async function loadData() {
+  const [d, rateRes, ms, rec, goldRes] = await Promise.all([
+    api('GET', '/api/data'),
+    api('GET', '/api/rate').catch(() => null),
+    api('GET', '/api/milestones').catch(() => []),
+    api('GET', '/api/recurring').catch(() => []),
+    api('GET', '/api/gold').catch(() => null),
+  ]);
+  const c = d.cfg;
+  CFG = {
+    startDate: c.startDate, startBal: +c.startBal, weekly: +c.weekly,
+    payAmt: +c.payAmt, payDate: c.payDate, rate: +c.rate, weeks: +c.weeks,
+    price_usd: +(c.price_usd||0), cogs_usd: +(c.cogs_usd||0),
+    fba_fee: +(c.fba_fee||0), ref_pct: +(c.ref_pct||15), units: +(c.units||0),
+    bot_chat_id: c.bot_chat_id||'',
+    goldQty:   +(c.goldQty  ||0),
+    goldPrice: +(c.goldPrice||0),
+  };
+  if (rateRes?.ok && rateRes.rate) {
+    CFG.rate = rateRes.rate;
+    api('POST', '/api/cfg', {rate: String(rateRes.rate)});
+  }
+  if (goldRes?.ok && goldRes.alis > 0 && CFG.goldQty > 0) {
+    CFG.goldPrice = Math.round(goldRes.alis);
+    CFG.startBal  = CFG.goldQty * CFG.goldPrice;
+    api('POST', '/api/cfg', {goldPrice: String(CFG.goldPrice), startBal: String(CFG.startBal)});
+  } else if (CFG.goldQty && CFG.goldPrice) {
+    CFG.startBal = CFG.goldQty * CFG.goldPrice;
+  }
+  EXP = d.exp;
+  MILESTONES = Array.isArray(ms) ? ms : [];
+  RECURRING  = Array.isArray(rec) ? rec : [];
+  updateRateBadge(!!rateRes?.ok);
+  renderTab();
+}
+
+function updateRateBadge(live) {
+  const el = document.getElementById('kbadge');
+  el.textContent = 'Kur: ' + CFG.rate.toFixed(2) + ' ₺/$';
+  el.title = live ? 'TCMB canlı kur' : 'Manuel kur';
+  el.style.color = live ? 'var(--green)' : '';
+  if (CFG.goldQty && CFG.goldPrice) {
+    const gb = document.getElementById('gbadge');
+    if (gb) {
+      gb.textContent = '⬡ ' + CFG.goldPrice.toLocaleString('tr-TR') + ' ₺ × ' + CFG.goldQty;
+      gb.title = 'Çeyrek altın alış fiyatı (canlı)';
+    }
+  }
+}
+
+// ─ Compute ────────────────────────────────────────────────────────────────
+
+function getWeeks() {
+  const out = [];
+  const d = new Date(CFG.startDate + 'T00:00:00');
+  for (let i = 0; i < CFG.weeks; i++) {
+    out.push(d.toISOString().slice(0, 10));
+    d.setDate(d.getDate() + 7);
+  }
+  return out;
+}
+
+function expTL(e) {
+  return e.currency === 'usd' ? Math.round((e.amt || 0) * CFG.rate) : (e.tl || 0);
+}
+
+function weeklyRecTL(d) {
+  const monthlyUSD = RECURRING
+    .filter(r => r.active && (!r.start_date || d >= r.start_date))
+    .reduce((s, r) => s + (r.amt_usd || 0), 0);
+  return Math.round(monthlyUSD * CFG.rate / 4.33);
+}
+
+function compute(wks) {
+  let bal = CFG.startBal, paid = false;
+  return wks.map((d, i) => {
+    const add = i === 0 ? 0 : CFG.weekly;
+    bal += add;
+    const nxt = wks[i + 1] || '9999';
+    const we  = EXP.filter(e => e.wdate >= d && e.wdate < nxt);
+    const wt  = we.reduce((s, e) => s + expTL(e), 0);
+    let ph = 0;
+    if (!paid && d === CFG.payDate) { ph = CFG.payAmt; paid = true; }
+    const wr = weeklyRecTL(d);
+    bal -= wt + ph + wr;
+    return {d, add, bal, we, wt, ph, wr};
+  });
+}
+
+// ─ Helpers ────────────────────────────────────────────────────────────────
+
+const dtl  = s => new Date(s+'T00:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'});
+const dow  = s => new Date(s+'T00:00:00').toLocaleDateString('tr-TR',{weekday:'long'});
+const mon  = s => new Date(s+'T00:00:00').toLocaleDateString('tr-TR',{month:'long',year:'numeric'});
+const fmt  = n => n.toLocaleString('tr-TR') + ' ₺';
+const fmtU = n => '$' + Math.round(n / CFG.rate).toLocaleString('tr-TR');
+const bcls = n => n < 0 ? 'br' : n < 40000 ? 'ba' : 'bg';
+
+// ─ Tab routing ────────────────────────────────────────────────────────────
+
+function switchTab(t) {
+  activeTab = t;
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('on'));
+  document.getElementById('tab-' + t).classList.add('on');
+  showForm = false;
+  renderTab();
+}
+
+function renderTab() {
+  if      (activeTab === 'tablo')   renderTable();
+  else if (activeTab === 'grafik')  renderChart();
+  else if (activeTab === 'birim')   renderBirim();
+  else if (activeTab === 'plan')    renderPlan();
+  else if (activeTab === 'ayarlar') renderSettings();
+}
+
+// ─ Shared cards HTML ──────────────────────────────────────────────────────
+
+function cardsHTML() {
+  const wks    = getWeeks();
+  const rows   = compute(wks);
+  const totExp = EXP.reduce((s, e) => s + expTL(e), 0);
+  const lastB  = rows[rows.length - 1].bal;
+  const today  = new Date().toISOString().slice(0, 10);
+  const past   = rows.filter(r => r.d <= today);
+  const nowRow = past.length ? past[past.length - 1] : rows[0];
+  const nowB   = nowRow.bal;
+  const endLbl = new Date(wks[wks.length-1]+'T00:00:00')
+                   .toLocaleDateString('tr-TR',{month:'short',year:'numeric'});
+  return `<div class="cards">
+    <div class="card">
+      <div class="card-lbl">Bugunku bakiye</div>
+      <div class="card-val ${bcls(nowB)}">${fmt(nowB)}</div>
+      <div class="card-usd">${fmtU(nowB)}</div>
+    </div>
+    <div class="card">
+      <div class="card-lbl">Planlanan masraf</div>
+      <div class="card-val ba">${fmt(totExp + CFG.payAmt)}</div>
+      <div class="card-usd">${fmtU(totExp + CFG.payAmt)}</div>
+      <div class="card-sub" style="margin-top:4px">${EXP.length} kalem + tedarikci ${fmt(CFG.payAmt)}</div>
+    </div>
+    <div class="card">
+      <div class="card-lbl">Projeksiyon (${endLbl})</div>
+      <div class="card-val ${bcls(lastB)}">${fmt(lastB)}</div>
+      <div class="card-usd">${fmtU(lastB)}</div>
+    </div>
+  </div>`;
+}
+
+// ─ Table ──────────────────────────────────────────────────────────────────
+
+function renderTable() {
+  const wks  = getWeeks();
+  const rows = compute(wks);
+  const wkOpts = wks.map(w => `<option value="${w}">${dtl(w)}  (${w})</option>`).join('');
+  const todayIso = new Date().toISOString().slice(0,10);
+  const pastRows = rows.filter(r => r.d <= todayIso);
+  const todayWk  = pastRows.length ? pastRows[pastRows.length-1].d : rows[0].d;
+
+  let pp = '', pm = '';
+  const tRows = rows.map(r => {
+    let out = '';
+    const phase = r.d < '2026-04-16' ? 'A' : 'B';
+    if (phase !== pp) {
+      pp = phase;
+      const lbl = phase === 'A'
+        ? 'Birikim fazi — tedarikci odemesine kadar'
+        : 'Odeme sonrasi birikim fazi';
+      out += `<tr class="sep"><td colspan="4">${lbl}</td></tr>`;
+    }
+    const cm = r.d.slice(0, 7);
+    if (phase === 'B' && cm !== pm) { pm = cm; out += `<tr class="mth"><td colspan="4">${mon(r.d)}</td></tr>`; }
+    else if (cm !== pm) { pm = cm; }
+
+    const isToday = r.d === todayWk;
+    const chips  = (isToday ? '<span class="chip c-now">Bu Hafta</span>' : '')
+                 + (r.d === CFG.payDate ? '<span class="chip c-qc">QC Haftasi</span>' : '');
+    const payLn  = r.ph > 0 ? `<div class="pe">&#8659; &minus;${fmt(r.ph)} tedarikci odemesi</div>` : '';
+    const recLn  = r.wr > 0 ? `<div class="pe-rec">&#8659; &minus;${fmt(r.wr)} sabit/hafta</div>` : '';
+    const expR   = r.we.map(e => {
+      const tl  = expTL(e);
+      const isUsd = e.currency === 'usd';
+      const amt = `<span class="${isUsd ? 'ea-wrap' : 'ea'}">${
+        isUsd
+          ? `<span class="ea-orig">&minus;$${(e.amt||0).toLocaleString('tr-TR',{minimumFractionDigits:0,maximumFractionDigits:2})}</span><span class="ea-conv">= ${fmt(tl)}</span>`
+          : `&minus;${fmt(tl)}`
+      }</span>`;
+      const cat = e.category || 'diger';
+      return `<div class="ei${isUsd ? ' usd' : ''}" draggable="true"
+        ondragstart="dragExpStart(event,'${e.id}')"
+        ondragend="dragExpEnd(event)"
+        ontouchstart="touchExpStart(event,'${e.id}')"
+        ontouchend="touchExpCancel()"
+        ontouchmove="touchExpCancel()"
+        ontouchcancel="touchExpCancel()">
+        <span class="drag-handle">⠿</span>
+        <span class="en" title="${e.name}"><span class="cat-chip cat-${cat}">${CAT_LABELS[cat]||cat}</span>${e.name}</span>
+        ${amt}
+        <span class="ed" onclick="delExp('${e.id}')">&#x2715;</span>
+      </div>`;
+    }).join('');
+    const addTxt = r.add > 0
+      ? `<span class="addv on">+${fmt(r.add)}</span>`
+      : `<span class="addv">&mdash;</span>`;
+
+    out += `<tr class="wr${isToday ? ' now-row' : ''}" data-wdate="${r.d}"${isToday ? ' id="row-today"' : ''}
+      ondragover="dragOver(event)"
+      ondragleave="dragLeave(event)"
+      ondrop="dropExp(event,'${r.d}')">
+      <td><div class="dc">${dtl(r.d)}</div><div class="dd">${dow(r.d)}</div>${chips}${payLn}${recLn}</td>
+      <td>${addTxt}</td>
+      <td><div class="bn ${bcls(r.bal)}">${fmt(r.bal)}</div><div class="bu">${fmtU(r.bal)}</div></td>
+      <td><div class="el">${expR}</div></td>
+    </tr>`;
+    return out;
+  }).join('');
+
+  const form = showForm ? `
+  <div class="form-box">
+    <div class="fttl">Masraf Ekle</div>
+    <div class="fields">
+      <div class="fg fg-n"><label>Masraf adi</label>
+        <input id="fn" type="text" placeholder="CPC belgesi, DDP kargo, Vine, Reklam…" autofocus></div>
+      <div class="fg fg-a"><label>Tutar</label>
+        <input id="fa" type="number" min="0" step="1" placeholder="0" oninput="prevCalc()"></div>
+      <div class="fg fg-c"><label>Birim</label>
+        <select id="fc" onchange="prevCalc()">
+          <option value="tl">&#8378; TL</option>
+          <option value="usd">$ USD</option>
+        </select></div>
+      <div class="fg fg-cat"><label>Kategori</label>
+        <select id="fcat">
+          <option value="tedarik">Tedarik</option>
+          <option value="kargo">Kargo/DDP</option>
+          <option value="amazon">Amazon/FBA</option>
+          <option value="reklam">Reklam/PPC</option>
+          <option value="vine">Vine</option>
+          <option value="diger" selected>Diger</option>
+        </select></div>
+      <div class="fg fg-w"><label>Hafta</label>
+        <select id="fw">${wkOpts}</select></div>
+      <button class="bok" onclick="addExp()">Ekle</button>
+      <button class="bca" onclick="showForm=false;renderTable()">Iptal</button>
+    </div>
+    <div class="prev" id="prev"></div>
+  </div>` : '';
+
+  const totExp = EXP.reduce((s, e) => s + expTL(e), 0);
+  document.getElementById('content').innerHTML =
+    cardsHTML() + `
+    <div class="tbl-wrap"><table>
+      <thead><tr>
+        <th style="width:155px">Tarih</th>
+        <th style="width:130px">Haftalik +</th>
+        <th style="width:165px">Net Bakiye</th>
+        <th>Bu Hafta Masraflar</th>
+      </tr></thead>
+      <tbody>${tRows}</tbody>
+    </table></div>
+    <div class="fab">
+      <button class="add-btn${showForm ? ' on' : ''}" onclick="showForm=!showForm;renderTable()">
+        ${showForm ? '&#x2715;&nbsp; Kapat' : '+&nbsp; Masraf Ekle'}
+      </button>
+    </div>
+    ${form}`;
+
+  document.getElementById('foot').innerHTML =
+    `<span>${EXP.length} masraf kayitli &nbsp;&middot;&nbsp; Ek masraf toplami: ${fmt(totExp)} &nbsp;&middot;&nbsp; ${CFG.startDate} &rarr; ${wks[wks.length-1]}</span>
+     ${EXP.length ? '<button class="clbtn" onclick="clearAll()">Tumunu sil</button>' : ''}`;
+
+  // Mobil: bugüne git butonu
+  let jb = document.getElementById('jumpBtn');
+  if (!jb) {
+    jb = document.createElement('button');
+    jb.id = 'jumpBtn'; jb.className = 'jump-btn'; jb.textContent = '↓';
+    jb.title = 'Bu haftaya git';
+    jb.onclick = () => {
+      const el = document.getElementById('row-today');
+      if (el) el.scrollIntoView({behavior:'smooth', block:'center'});
+    };
+    document.body.appendChild(jb);
+  }
+}
+
+window.prevCalc = () => {
+  const a = parseFloat(document.getElementById('fa')?.value) || 0;
+  const c = document.getElementById('fc')?.value;
+  const el = document.getElementById('prev');
+  if (!el || !a) { if (el) el.textContent = ''; return; }
+  el.textContent = c === 'usd'
+    ? `= ${(a * CFG.rate).toLocaleString('tr-TR')} ₺   (× ${CFG.rate})`
+    : `= ${fmtU(a)}   (÷ ${CFG.rate})`;
+};
+
+window.addExp = async () => {
+  const nm = document.getElementById('fn')?.value.trim();
+  const av = parseFloat(document.getElementById('fa')?.value) || 0;
+  const cu  = document.getElementById('fc')?.value;
+  const wk  = document.getElementById('fw')?.value;
+  const cat = document.getElementById('fcat')?.value || 'diger';
+  if (!nm || av <= 0) return;
+  const tl = cu === 'usd' ? Math.round(av * CFG.rate) : Math.round(av);
+  const id = Date.now().toString();
+  await api('POST', '/api/exp', {id, name: nm, tl, wdate: wk, currency: cu, amt: av, category: cat});
+  EXP.push({id, name: nm, tl, wdate: wk, currency: cu, amt: av, category: cat});
+  EXP.sort((a, b) => a.wdate.localeCompare(b.wdate));
+  showForm = false;
+  renderTable();
+};
+
+// ─ Drag & Drop ────────────────────────────────────────────────────────────
+let _dragId = null;
+
+window.dragExpStart = (e, id) => {
+  _dragId = id;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+};
+
+window.dragExpEnd = e => {
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('tr.drag-over').forEach(r => r.classList.remove('drag-over'));
+};
+
+window.dragOver = e => {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.closest('tr.wr')?.classList.add('drag-over');
+};
+
+window.dragLeave = e => {
+  if (!e.currentTarget.contains(e.relatedTarget))
+    e.currentTarget.classList.remove('drag-over');
+};
+
+window.dropExp = async (e, wdate) => {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (!_dragId) return;
+  const exp = EXP.find(x => x.id === _dragId);
+  if (!exp || exp.wdate === wdate) return;
+  exp.wdate = wdate;
+  EXP.sort((a,b) => a.wdate.localeCompare(b.wdate));
+  await api('POST', '/api/exp/' + _dragId, {wdate});
+  _dragId = null;
+  renderTable();
+};
+
+// Mobile: long-press → "hangi haftaya taşı?" diyaloğu (HTML5 drag, touch'ta çalışmıyor)
+let _lpTimer = null;
+window.touchExpStart = (ev, id) => {
+  _lpTimer = setTimeout(() => {
+    const exp = EXP.find(x => x.id === id);
+    if (!exp) return;
+    const wks  = getWeeks();
+    const opts = wks.map((w,i)=>`${i+1}. ${dtl(w)}  (${w})`).join('\n');
+    const cur  = wks.indexOf(exp.wdate) + 1 || 1;
+    const inp  = prompt(`"${exp.name}" hangi haftaya taşınsın?\nMevcut: ${cur}. hafta\n\n${opts}\n\nHafta numarası (1-${wks.length}):`, String(cur));
+    if (!inp) return;
+    const idx = parseInt(inp) - 1;
+    if (idx < 0 || idx >= wks.length) return;
+    const newWdate = wks[idx];
+    if (newWdate === exp.wdate) return;
+    exp.wdate = newWdate;
+    EXP.sort((a,b)=>a.wdate.localeCompare(b.wdate));
+    api('POST','/api/exp/'+id,{wdate:newWdate}).then(()=>renderTable());
+  }, 500);
+};
+window.touchExpCancel = () => { clearTimeout(_lpTimer); _lpTimer = null; };
+
+window.delExp = async id => {
+  await api('DELETE', '/api/exp/' + id);
+  EXP = EXP.filter(e => e.id !== id);
+  renderTable();
+};
+
+window.clearAll = async () => {
+  if (!confirm('Tum masraflar silinsin mi?')) return;
+  for (const e of EXP) await api('DELETE', '/api/exp/' + e.id);
+  EXP = [];
+  renderTable();
+};
+
+// ─ Chart ──────────────────────────────────────────────────────────────────
+
+function renderChart() {
+  document.getElementById('foot').innerHTML = '';
+  // Category breakdown data
+  const catTotals = {};
+  EXP.forEach(e => { const c = e.category||'diger'; catTotals[c] = (catTotals[c]||0) + expTL(e); });
+  const catKeys = Object.keys(catTotals).filter(k => catTotals[k] > 0);
+  const donutHTML = catKeys.length ? `
+    <div style="display:grid;grid-template-columns:200px 1fr;gap:20px;align-items:center;padding:16px 20px">
+      <div style="position:relative;height:180px"><canvas id="donut"></canvas></div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${catKeys.map(k=>`<div style="display:flex;align-items:center;gap:10px">
+          <div style="width:10px;height:10px;border-radius:2px;background:${CAT_COLORS[k]};flex-shrink:0"></div>
+          <span style="font-size:12px;color:var(--t2);flex:1">${CAT_LABELS[k]||k}</span>
+          <span style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--t)">${fmt(catTotals[k])}</span>
+        </div>`).join('')}
+      </div>
+    </div>` : '<div style="padding:16px 20px;font-size:12px;color:var(--t3)">Henuz masraf yok.</div>';
+
+  document.getElementById('content').innerHTML =
+    cardsHTML() +
+    '<div class="chart-wrap"><canvas id="ch"></canvas></div>' +
+    `<div class="chart-wrap" style="height:auto;margin-top:12px">
+      <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);font-weight:600;padding:14px 20px 0">Kategori Dagilimi</div>
+      ${donutHTML}
+    </div>`;
+
+  const wks    = getWeeks();
+  const rows   = compute(wks);
+  const labels = rows.map(r => dtl(r.d));
+  const bals   = rows.map(r => r.bal);
+
+  const ptColors = bals.map(b => b < 0 ? '#ff5a5a' : b < 40000 ? '#f0a828' : '#97D700');
+
+  if (chartInst) { chartInst.destroy(); chartInst = null; }
+
+  const zonePl = {
+    id: 'zones',
+    beforeDraw(ch) {
+      const {ctx, chartArea:{top,bottom,left,right}, scales:{y}} = ch;
+      const y0 = y.getPixelForValue(0), y40 = y.getPixelForValue(40000);
+      ctx.save();
+      ctx.fillStyle = 'rgba(151,215,0,.04)';  ctx.fillRect(left, top,  right-left, y40-top);
+      ctx.fillStyle = 'rgba(240,168,40,.06)'; ctx.fillRect(left, y40, right-left, y0-y40);
+      ctx.fillStyle = 'rgba(255,90,90,.07)';  ctx.fillRect(left, y0,  right-left, bottom-y0);
+      ctx.restore();
+    }
+  };
+
+  chartInst = new Chart(document.getElementById('ch').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Net Bakiye',
+        data: bals,
+        borderColor: '#4FB3FF',
+        borderWidth: 2,
+        pointBackgroundColor: ptColors,
+        pointBorderColor:     ptColors,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        tension: .35,
+        fill: {target:'origin', above:'rgba(79,179,255,.05)', below:'rgba(255,90,90,.07)'}
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {mode:'index', intersect:false},
+      plugins: {
+        legend: {display: false},
+        tooltip: {
+          backgroundColor: '#1c1c1c',
+          borderColor: 'rgba(255,255,255,.15)',
+          borderWidth: 1,
+          titleColor: '#ede9e0',
+          bodyColor:  '#9a9690',
+          titleFont: {family:'IBM Plex Mono', size:12, weight:'600'},
+          bodyFont:  {family:'IBM Plex Mono', size:11},
+          padding: 12,
+          callbacks: {
+            title: items => labels[items[0].dataIndex],
+            label: item => {
+              const b = bals[item.dataIndex];
+              const r = rows[item.dataIndex];
+              const lines = [' Bakiye: ' + fmt(b) + '  (' + fmtU(b) + ')'];
+              if (r.ph) lines.push(' Tedarikci odemesi: -' + fmt(r.ph));
+              if (r.wt) lines.push(' Masraf: -' + fmt(r.wt));
+              return lines;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {color:'#606060', font:{family:'IBM Plex Mono',size:10}, maxRotation:45, autoSkip:true, maxTicksLimit:18},
+          grid:  {color:'rgba(255,255,255,.05)'},
+          border:{color:'rgba(255,255,255,.1)'}
+        },
+        y: {
+          ticks: {color:'#606060', font:{family:'IBM Plex Mono',size:10}, callback: v => v.toLocaleString('tr-TR') + ' ₺'},
+          grid:  {color:'rgba(255,255,255,.05)'},
+          border:{color:'rgba(255,255,255,.1)'}
+        }
+      }
+    },
+    plugins: [zonePl]
+  });
+
+  // Donut
+  const donutEl = document.getElementById('donut');
+  if (donutEl && catKeys.length) {
+    if (donutInst) { donutInst.destroy(); donutInst = null; }
+    donutInst = new Chart(donutEl.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: catKeys.map(k => CAT_LABELS[k]||k),
+        datasets: [{data: catKeys.map(k=>catTotals[k]), backgroundColor: catKeys.map(k=>CAT_COLORS[k]+'CC'),
+                    borderColor: catKeys.map(k=>CAT_COLORS[k]), borderWidth:1.5, hoverOffset:6}]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false, cutout:'68%',
+        plugins:{
+          legend:{display:false},
+          tooltip:{backgroundColor:'#1c1c1c',borderColor:'rgba(255,255,255,.15)',borderWidth:1,
+            titleColor:'#ede9e0',bodyColor:'#9a9690',padding:10,
+            callbacks:{label: item => ' ' + fmt(item.raw)}}
+        }
+      }
+    });
+  }
+}
+
+// ─ Birim Ekonomisi ────────────────────────────────────────────────────────
+
+function renderBirim() {
+  document.getElementById('foot').innerHTML = '';
+  const totalInvTL = EXP.reduce((s,e) => s+expTL(e), 0) + CFG.payAmt;
+  const totalInvUSD = totalInvTL / CFG.rate;
+  const price  = CFG.price_usd  || 0;
+  const cogs   = CFG.cogs_usd   || 0;
+  const fbaFee = CFG.fba_fee    || 0;
+  const refPct = CFG.ref_pct    || 15;
+  const units  = CFG.units      || 0;
+  const refFee    = price * refPct / 100;
+  const netProfit = price - cogs - fbaFee - refFee;
+  const roi       = cogs > 0 ? (netProfit / cogs) * 100 : 0;
+  const breakEven = netProfit > 0 ? Math.ceil(totalInvUSD / netProfit) : null;
+  const totalRev  = price * units;
+  const totalProfit = netProfit * units;
+  const netAfterInv = totalProfit - totalInvUSD;
+  const pc = n => n > 0 ? 'pos' : n < 0 ? 'neg' : 'neu';
+  const d2 = n => n.toFixed(2);
+  document.getElementById('content').innerHTML = `
+  <div class="ue-grid">
+    <div class="ue-card">
+      <div class="ue-ttl">Urun Parametreleri</div>
+      <div class="ue-inp-grid">
+        <div class="ue-fg"><label>Satis Fiyati ($)</label>
+          <input type="number" id="ue-price" value="${price||''}" placeholder="0.00" step="0.01" min="0"></div>
+        <div class="ue-fg"><label>COGS / birim ($)</label>
+          <input type="number" id="ue-cogs" value="${cogs||''}" placeholder="0.00" step="0.01" min="0"></div>
+        <div class="ue-fg"><label>FBA Fee ($)</label>
+          <input type="number" id="ue-fba" value="${fbaFee||''}" placeholder="0.00" step="0.01" min="0"></div>
+        <div class="ue-fg"><label>Referral %</label>
+          <input type="number" id="ue-ref" value="${refPct}" placeholder="15" step="0.1" min="0" max="100"></div>
+        <div class="ue-fg"><label>Toplam Birim</label>
+          <input type="number" id="ue-units" value="${units||''}" placeholder="0" step="1" min="0"></div>
+      </div>
+      <button class="ue-save" onclick="saveBirim()">Hesapla ve Kaydet</button>
+    </div>
+    <div class="ue-card">
+      <div class="ue-ttl">Maliyet Dagılımı / Birim</div>
+      <div class="ue-row"><span class="ue-lbl">Satis fiyati</span><span class="ue-val neu">$${d2(price)}</span></div>
+      <div class="ue-row"><span class="ue-lbl">— COGS</span><span class="ue-val neg">−$${d2(cogs)}</span></div>
+      <div class="ue-row"><span class="ue-lbl">— FBA Fulfillment</span><span class="ue-val neg">−$${d2(fbaFee)}</span></div>
+      <div class="ue-row"><span class="ue-lbl">— Referral (${refPct}%)</span><span class="ue-val neg">−$${d2(refFee)}</span></div>
+      <div class="ue-row" style="margin-top:6px;padding-top:12px;border-top:1px solid var(--bd3)">
+        <span class="ue-lbl" style="font-weight:600;color:var(--t)">Net Kar / Birim</span>
+        <span class="ue-val ue-big ${pc(netProfit)}">$${d2(netProfit)}<br><span class="ue-sub2">= ${fmt(Math.round(netProfit*CFG.rate))}</span></span>
+      </div>
+    </div>
+  </div>
+  <div class="ue-grid">
+    <div class="ue-card">
+      <div class="ue-ttl">Yatırım Analizi</div>
+      <div class="ue-row">
+        <span class="ue-lbl">Toplam yatırım</span>
+        <span class="ue-val warn">${fmt(totalInvTL)}<br><span class="ue-sub2">$${Math.round(totalInvUSD).toLocaleString('tr-TR')}</span></span>
+      </div>
+      <div class="ue-row"><span class="ue-lbl">ROI (urun bazli)</span>
+        <span class="ue-val ${pc(roi)}">${roi.toFixed(1)}%</span></div>
+      <div class="ue-row"><span class="ue-lbl">Break-even</span>
+        <span class="ue-val ${breakEven ? 'neu' : 'neg'}">${breakEven ? breakEven.toLocaleString('tr-TR') + ' birim' : '∞'}</span></div>
+    </div>
+    <div class="ue-card">
+      <div class="ue-ttl">Projeksiyon (${units.toLocaleString('tr-TR')} birim)</div>
+      <div class="ue-row"><span class="ue-lbl">Brut gelir</span>
+        <span class="ue-val neu">$${Math.round(totalRev).toLocaleString('tr-TR')}</span></div>
+      <div class="ue-row"><span class="ue-lbl">Toplam kar</span>
+        <span class="ue-val ${pc(totalProfit)}">$${Math.round(totalProfit).toLocaleString('tr-TR')}<br>
+        <span class="ue-sub2">${fmt(Math.round(totalProfit*CFG.rate))}</span></span></div>
+      <div class="ue-row"><span class="ue-lbl">Net (yatırım dusulunce)</span>
+        <span class="ue-val ${pc(netAfterInv)}">$${Math.round(netAfterInv).toLocaleString('tr-TR')}</span></div>
+    </div>
+  </div>`;
+}
+
+window.saveBirim = async () => {
+  const data = {
+    price_usd: +document.getElementById('ue-price').value || 0,
+    cogs_usd:  +document.getElementById('ue-cogs').value  || 0,
+    fba_fee:   +document.getElementById('ue-fba').value   || 0,
+    ref_pct:   +document.getElementById('ue-ref').value   || 15,
+    units:     +document.getElementById('ue-units').value || 0,
+  };
+  await api('POST', '/api/cfg', Object.fromEntries(Object.entries(data).map(([k,v])=>[k,String(v)])));
+  Object.assign(CFG, data);
+  renderBirim();
+};
+
+// ─ Plan / Milestone ───────────────────────────────────────────────────────
+
+function renderPlan() {
+  document.getElementById('foot').innerHTML = '';
+  const doneCount = MILESTONES.filter(m => m.done).length;
+  const total = MILESTONES.length || 1;
+  const pct = Math.round(doneCount / total * 100);
+  const barColor = pct === 100 ? 'var(--green)' : 'var(--blue)';
+  const rows = MILESTONES.map((m, i) => {
+    const meta = MS_META[m.id] || {label: m.name, icon: '○'};
+    const isLast = i === MILESTONES.length - 1;
+    return `
+    <div class="ms-item">
+      <div class="ms-dot-col">
+        <div class="ms-dot${m.done ? ' done' : ''}" onclick="toggleMs('${m.id}')">${m.done ? '✓' : ''}</div>
+        ${!isLast ? '<div class="ms-line"></div>' : ''}
+      </div>
+      <div class="ms-body">
+        <div class="ms-name${m.done ? ' done' : ''}">${meta.icon} ${meta.label}</div>
+        <div class="ms-date-row">
+          <input class="ms-date-inp" type="date" value="${m.ddate||''}"
+            onchange="saveMs('${m.id}',this.value)">
+          <button class="ms-toggle${m.done ? ' done' : ''}" onclick="toggleMs('${m.id}')">
+            ${m.done ? '↩ Geri al' : '✓ Tamamlandı'}
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('content').innerHTML = `
+  <div style="max-width:640px">
+    <div style="margin-bottom:24px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:11px;color:var(--t3);letter-spacing:.08em;text-transform:uppercase;font-weight:600">${doneCount} / ${total} adım tamamlandı</span>
+        <span style="font-family:var(--mono);font-size:13px;color:${barColor};font-weight:600">%${pct}</span>
+      </div>
+      <div class="ms-prog"><div class="ms-prog-bar" style="width:${pct}%;background:${barColor}"></div></div>
+    </div>
+    <div class="timeline">${rows}</div>
+  </div>`;
+}
+
+window.toggleMs = async id => {
+  const ms = MILESTONES.find(m => m.id === id); if (!ms) return;
+  ms.done = ms.done ? 0 : 1;
+  await api('POST', '/api/milestone', {id: ms.id, name: ms.name, ddate: ms.ddate||'', done: ms.done});
+  renderPlan();
+};
+
+window.saveMs = async (id, ddate) => {
+  const ms = MILESTONES.find(m => m.id === id); if (!ms) return;
+  ms.ddate = ddate;
+  await api('POST', '/api/milestone', {id: ms.id, name: ms.name, ddate, done: ms.done});
+};
+
+// ─ Settings ───────────────────────────────────────────────────────────────
+
+function renderSettings() {
+  document.getElementById('foot').innerHTML = '';
+  const wkOpts = getWeeks().map(w =>
+    `<option value="${w}" ${w === CFG.payDate ? 'selected' : ''}>${dtl(w)}  (${w})</option>`
+  ).join('');
+
+  const monthlyUSD = RECURRING.filter(r=>r.active).reduce((s,r)=>s+(r.amt_usd||0),0);
+  const recListHTML = RECURRING.map(r => {
+    const statusClass = !r.active ? 'off' : r.start_date ? 'sched' : 'on';
+    const statusLabel = !r.active ? 'Pasif' : r.start_date ? `${r.start_date}'den` : 'Aktif';
+    return `<div class="rec-item">
+      <span class="cat-chip cat-${r.category}">${CAT_LABELS[r.category]||r.category}</span>
+      <span class="rec-name">${r.name}</span>
+      <span class="rec-amt">$${(r.amt_usd||0).toFixed(2)}/ay</span>
+      ${r.start_date ? `<span class="rec-start">${r.start_date}'den</span>` : ''}
+      <button class="rec-act ${statusClass}" onclick="toggleRec('${r.id}')">${statusLabel}</button>
+      <button class="rec-del" onclick="delRec('${r.id}')">&#x2715;</button>
+    </div>`;
+  }).join('') || '<div style="font-size:12px;color:var(--t3);padding:8px 0">Henuz kayit yok.</div>';
+
+  document.getElementById('content').innerHTML = `
+  <div class="sgrid">
+    <div class="sc">
+      <div class="sc-ttl">Birikim Parametreleri</div>
+      <div class="sfg"><label>Ceyrek altin adedi</label>
+        <input type="number" id="s-gq" value="${CFG.goldQty}" min="0" step="1" oninput="goldCalc()"></div>
+      <div class="sfg"><label>Ceyrek altin fiyati — alis (₺)</label>
+        <input type="number" id="s-gp" value="${CFG.goldPrice}" min="0" step="1" oninput="goldCalc()"></div>
+      <div class="sfg"><label>Hesaplanan baslangic bakiyesi</label>
+        <div id="s-gold-total" style="font-family:var(--mono);font-size:14px;color:var(--green);padding:9px 11px;border:1px solid var(--bd);border-radius:7px;background:var(--bg3)">${(CFG.goldQty*CFG.goldPrice).toLocaleString('tr-TR')} ₺</div></div>
+      <div class="sfg"><label>Haftalik artis (₺)</label>
+        <input type="number" id="s-wk" value="${CFG.weekly}"></div>
+      <div class="sfg"><label>Kur (₺ / $)</label>
+        <input type="number" id="s-rt" value="${CFG.rate}" min="1"></div>
+      <button class="sbtn" onclick="saveSettings()">Kaydet</button>
+      <div class="sok" id="s-ok"></div>
+    </div>
+    <div class="sc">
+      <div class="sc-ttl">Tedarikci Odemesi</div>
+      <div class="sfg"><label>Odeme tutari (₺)</label>
+        <input type="number" id="s-pa" value="${CFG.payAmt}"></div>
+      <div class="sfg"><label>Odeme haftasi</label>
+        <select id="s-pd">${wkOpts}</select></div>
+      <button class="sbtn" onclick="saveSettings()">Kaydet</button>
+    </div>
+    <div class="sc" style="grid-column:1/-1">
+      <div class="sc-ttl" style="display:flex;justify-content:space-between;align-items:center">
+        <span>Sabit Aylik Giderler</span>
+        <span style="font-family:var(--mono);font-size:12px;color:var(--amber);font-weight:600">
+          $${monthlyUSD.toFixed(2)}/ay &nbsp;·&nbsp; ${fmt(Math.round(monthlyUSD*CFG.rate/4.33))}/hafta
+        </span>
+      </div>
+      <div class="rec-list">${recListHTML}</div>
+      <div class="rec-add-row">
+        <div class="ue-fg" style="flex:1;min-width:150px"><label>Ad</label>
+          <input id="rec-n" type="text" class="sfg input" placeholder="Jungle Scout, PPC tool..." style="font-size:13px;padding:8px 10px;border:1px solid var(--bd3);border-radius:7px;background:var(--bg3);color:var(--t);outline:none"></div>
+        <div class="ue-fg" style="flex:0 0 90px"><label>$/ay</label>
+          <input id="rec-a" type="number" step="0.01" min="0" placeholder="0.00" style="font-size:13px;padding:8px 10px;border:1px solid var(--bd3);border-radius:7px;background:var(--bg3);color:var(--t);font-family:var(--mono);outline:none"></div>
+        <div class="ue-fg" style="flex:0 0 110px"><label>Kategori</label>
+          <select id="rec-cat" style="font-size:13px;padding:8px 10px;border:1px solid var(--bd3);border-radius:7px;background:var(--bg3);color:var(--t);outline:none">
+            <option value="amazon">Amazon/FBA</option>
+            <option value="reklam">Reklam/PPC</option>
+            <option value="diger" selected>Diger</option>
+          </select></div>
+        <div class="ue-fg" style="flex:0 0 140px"><label>Baslangic (opsiyonel)</label>
+          <input id="rec-s" type="date" style="font-size:13px;padding:8px 10px;border:1px solid var(--bd3);border-radius:7px;background:var(--bg3);color:var(--t2);font-family:var(--mono);outline:none"></div>
+        <div style="display:flex;align-items:flex-end">
+          <button class="sbtn" style="margin-top:0" onclick="addRec()">Ekle</button>
+        </div>
+      </div>
+    </div>
+    <div class="sc" style="grid-column:1/-1">
+      <div class="sc-ttl" style="display:flex;justify-content:space-between;align-items:center">
+        <span>Telegram Bot</span>
+        <span style="font-size:10px;color:var(--green);font-family:var(--mono)">● Aktif</span>
+      </div>
+      <div style="font-size:12px;color:var(--t3);margin-bottom:14px;line-height:1.7">
+        Bota <b style="color:var(--t2)">/start</b> yaz → Chat ID'ni al → aşağıya gir (güvenlik için sadece sana cevap verir).<br>
+        Komutlar: /bakiye &nbsp;/hafta &nbsp;/ozet &nbsp;/plan &nbsp;/kur &nbsp;/ekle
+      </div>
+      <div class="sfg" style="max-width:280px"><label>Chat ID</label>
+        <input type="text" id="s-chatid" value="${CFG.bot_chat_id||''}" placeholder="BotFather'dan /start yaz"></div>
+      <button class="sbtn" onclick="saveChatId()">Kaydet</button>
+      <div class="sok" id="s-cid-ok"></div>
+    </div>
+  </div>`;
+}
+
+window.goldCalc = () => {
+  const q = parseInt(document.getElementById('s-gq')?.value) || 0;
+  const p = parseInt(document.getElementById('s-gp')?.value) || 0;
+  const el = document.getElementById('s-gold-total');
+  if (el) el.textContent = (q * p).toLocaleString('tr-TR') + ' ₺';
+};
+
+window.saveSettings = async () => {
+  const goldQty   = parseInt(document.getElementById('s-gq')?.value) || 0;
+  const goldPrice = parseInt(document.getElementById('s-gp')?.value) || 0;
+  const computedBal = goldQty && goldPrice ? goldQty * goldPrice : CFG.startBal;
+  const data = {
+    startBal:  String(computedBal),
+    goldQty:   String(goldQty),
+    goldPrice: String(goldPrice),
+    weekly:    document.getElementById('s-wk').value,
+    rate:      document.getElementById('s-rt').value,
+    payAmt:    document.getElementById('s-pa').value,
+    payDate:   document.getElementById('s-pd').value,
+  };
+  await api('POST', '/api/cfg', data);
+  CFG = {...CFG,
+    startBal:  computedBal,
+    goldQty,
+    goldPrice,
+    weekly:   +data.weekly,
+    rate:     +data.rate,
+    payAmt:   +data.payAmt,
+    payDate:   data.payDate,
+  };
+  updateRateBadge(false);
+  renderTab();
+  const ok = document.getElementById('s-ok');
+  if (ok) { ok.textContent = '✓ Kaydedildi'; setTimeout(() => { ok.textContent = ''; }, 2500); }
+};
+
+window.saveChatId = async () => {
+  const cid = document.getElementById('s-chatid')?.value.trim();
+  await api('POST', '/api/cfg', {bot_chat_id: cid});
+  CFG.bot_chat_id = cid;
+  const ok = document.getElementById('s-cid-ok');
+  if (ok) { ok.textContent = '✓ Kaydedildi'; setTimeout(() => ok.textContent='', 2500); }
+};
+
+// ─ Recurring handlers ─────────────────────────────────────────────────────
+
+window.addRec = async () => {
+  const nm  = document.getElementById('rec-n')?.value.trim();
+  const amt = parseFloat(document.getElementById('rec-a')?.value) || 0;
+  const cat = document.getElementById('rec-cat')?.value || 'diger';
+  const sd  = document.getElementById('rec-s')?.value || '';
+  if (!nm || amt <= 0) return;
+  const id = 'rr' + Date.now();
+  const rec = {id, name:nm, amt_usd:amt, category:cat, active:1, start_date:sd};
+  await api('POST', '/api/recurring', rec);
+  RECURRING.push(rec);
+  renderSettings();
+};
+
+window.toggleRec = async id => {
+  const r = RECURRING.find(x => x.id === id); if (!r) return;
+  r.active = r.active ? 0 : 1;
+  await api('POST', '/api/recurring', r);
+  renderSettings();
+};
+
+window.delRec = async id => {
+  await api('DELETE', '/api/recurring/' + id);
+  RECURRING = RECURRING.filter(r => r.id !== id);
+  renderSettings();
+};
+
+// ─ Export / Calendar / PDF — client-side (sunucusuz) ─────────────────────
+
+function _saveBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+window.doExport = async () => {
+  const data = {cfg: LS.get('cfg',{}), exp: LS.get('exp',[]),
+                milestones: LS.get('milestones',[]), recurring: LS.get('recurring',[])};
+  _saveBlob(new Blob([JSON.stringify(data,null,2)], {type:'application/json'}),
+            'jumvi_yedek.json');
+};
+
+window.downloadCal = async () => {
+  const cfg = LS.get('cfg',{}), exps = LS.get('exp',[]), ms = LS.get('milestones',[]);
+  const esc = s => (s||'').replace(/,/g,'\\,').replace(/\n/g,'\\n');
+  const ics_date = d => d.replace(/-/g,'');
+  const lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//JUMVI//Finansal Plan//TR',
+                 'CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:JUMVI Finansal Plan',
+                 'X-WR-TIMEZONE:Europe/Istanbul'];
+  const addEv = (uid, ds, sum, desc='') => {
+    const dt = new Date(ds+'T00:00:00'); dt.setDate(dt.getDate()+1);
+    const d2 = dt.toISOString().slice(0,10);
+    lines.push('BEGIN:VEVENT',`DTSTART;VALUE=DATE:${ics_date(ds)}`,`DTEND;VALUE=DATE:${ics_date(d2)}`,
+               `SUMMARY:${esc(sum)}`, ...(desc?[`DESCRIPTION:${esc(desc)}`]:[]),
+               `UID:${uid}@jumvi`,'END:VEVENT');
+  };
+  const ico = {ms1:'🔍',ms2:'🏭',ms3:'🚢',ms4:'📦',ms5:'🛒',ms6:'🎉',ms7:'🌿',ms8:'⭐'};
+  ms.forEach(m => { if (m.ddate) addEv('ms-'+m.id, m.ddate, `${ico[m.id]||'○'} ${m.name}${m.done?' ✓':''}`, 'JUMVI Milestone'); });
+  if (cfg.payDate) addEv('payment', cfg.payDate, `💸 Tedarikci Odemesi — ${(+cfg.payAmt).toLocaleString('tr-TR')} ₺`);
+  const start = cfg.startDate, weekly = +cfg.weekly||0;
+  if (weekly) {
+    const d = new Date(start+'T00:00:00');
+    for (let i=1;i<=12;i++) { d.setDate(d.getDate()+7); addEv(`weekly-${i}`, d.toISOString().slice(0,10), `💰 Haftalık +${weekly.toLocaleString('tr-TR')} ₺`); }
+  }
+  exps.forEach(e => {
+    const usd = e.currency==='usd' ? ` ($${(+e.amt).toFixed(0)})` : '';
+    addEv('exp-'+e.id, e.wdate, `🔴 ${e.name} —${(+e.tl).toLocaleString('tr-TR')} ₺`, e.name+usd);
+  });
+  lines.push('END:VCALENDAR');
+  _saveBlob(new Blob([lines.join('\r\n')], {type:'text/calendar;charset=utf-8'}),
+            'JUMVI_Takvim_'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'.ics');
+};
+
+window.downloadPdf = async () => {
+  if (!window.jspdf) { alert('PDF kutuphanesi yuklenmedi, internet baglantisi kontrol et.'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'pt', format:'a4'});
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+  // dark bg
+  doc.setFillColor(12,12,12); doc.rect(0,0,W,H,'F');
+
+  const wks = getWeeks(), rows = compute(wks);
+  const totExp = EXP.reduce((s,e)=>s+expTL(e), 0);
+  const lastB = rows[rows.length-1].bal;
+  const today = new Date().toISOString().slice(0,10);
+  const past = rows.filter(r => r.d <= today);
+  const nowB = (past.length ? past[past.length-1] : rows[0]).bal;
+  const ftl = n => Math.round(n).toLocaleString('tr-TR')+' ₺';
+  const fusd = n => '$'+Math.round(n/CFG.rate).toLocaleString('tr-TR');
+
+  // header
+  doc.setTextColor(79,179,255); doc.setFontSize(22); doc.setFont('helvetica','bold');
+  doc.text('JUMVI', 40, 50);
+  doc.setTextColor(154,150,144); doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text(`Finansal Plan  ·  ${new Date().toLocaleDateString('tr-TR')}  ·  Kur: ${CFG.rate.toFixed(2)} TL / $1`, 40, 65);
+  doc.setDrawColor(79,179,255); doc.setLineWidth(1); doc.line(40, 75, W-40, 75);
+
+  // summary cards
+  const cardW = (W-80-20)/3, cardY=90, cardH=55;
+  const cards = [
+    ['BUGUNKU BAKİYE', ftl(nowB), fusd(nowB), nowB>=40000?[151,215,0]:nowB>=0?[240,168,40]:[255,90,90]],
+    ['PLANLANAN MASRAF', ftl(totExp + +CFG.payAmt), `${EXP.length} kalem`, [240,168,40]],
+    ['PROJEKSİYON', ftl(lastB), fusd(lastB), lastB>=40000?[151,215,0]:lastB>=0?[240,168,40]:[255,90,90]],
+  ];
+  cards.forEach(([lbl,big,sub,col], i) => {
+    const x = 40 + i*(cardW+10);
+    doc.setFillColor(26,42,58); doc.roundedRect(x, cardY, cardW, 16, 3, 3, 'F');
+    doc.setFillColor(20,20,20); doc.rect(x, cardY+16, cardW, cardH-16, 'F');
+    doc.setTextColor(79,179,255); doc.setFontSize(7); doc.setFont('helvetica','bold');
+    doc.text(lbl, x+10, cardY+11);
+    doc.setTextColor(col[0],col[1],col[2]); doc.setFontSize(11);
+    doc.text(big, x+10, cardY+32);
+    doc.setTextColor(154,150,144); doc.setFontSize(8); doc.setFont('helvetica','normal');
+    doc.text(sub, x+10, cardY+46);
+  });
+
+  // weekly table via autoTable
+  const tableBody = rows.map(r => {
+    const ep = [];
+    if (r.ph) ep.push(`Tedarikci: -${ftl(r.ph)} / ${fusd(r.ph)}`);
+    r.we.forEach(e => {
+      const amt = e.currency==='usd' ? Math.round((e.amt||0)*CFG.rate) : e.tl;
+      const note = e.currency==='usd' ? ` ($${(+e.amt).toFixed(0)})` : '';
+      ep.push(`${e.name}: -${ftl(amt)}${note}`);
+    });
+    return [
+      new Date(r.d+'T00:00:00').toLocaleDateString('tr-TR'),
+      r.add ? `+${ftl(r.add)}` : '—',
+      `${ftl(r.bal)}\n${fusd(r.bal)}`,
+      ep.join('\n') || '—'
+    ];
+  });
+  doc.autoTable({
+    head: [['Tarih','Haftalik +','Net Bakiye','Masraflar']],
+    body: tableBody,
+    startY: cardY + cardH + 20,
+    theme: 'plain',
+    headStyles: {fillColor:[26,42,58], textColor:[79,179,255], fontSize:7, fontStyle:'bold'},
+    bodyStyles: {textColor:[237,233,224], fontSize:8, fillColor:[20,20,20]},
+    alternateRowStyles: {fillColor:[28,28,28]},
+    columnStyles: {
+      0: {cellWidth:70}, 1: {cellWidth:60}, 2: {cellWidth:90, fontStyle:'bold'}, 3: {cellWidth:'auto'},
+    },
+    didDrawCell: (data) => {
+      if (data.section === 'body' && data.column.index === 2) {
+        const b = rows[data.row.index].bal;
+        const col = b>=40000?[151,215,0]:b>=0?[240,168,40]:[255,90,90];
+        doc.setTextColor(...col);
+      }
+    },
+    didDrawPage: (data) => {
+      doc.setFillColor(12,12,12); doc.rect(0,0,W,H,'F');
+    },
+    margin: {left:40, right:40, top:90, bottom:40},
+  });
+
+  doc.save('JUMVI_Rapor_'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'.pdf');
+};
+
+window.doImport = async input => {
+  const file = input.files[0]; if (!file) return;
+  let data;
+  try { data = JSON.parse(await file.text()); } catch { alert('Gecersiz JSON dosyasi.'); return; }
+  const r = await api('POST', '/api/import', data);
+  // Update local state
+  const c = data.cfg || {};
+  if (c.startBal) CFG = {...CFG,
+    startBal: +c.startBal, weekly: +c.weekly, payAmt: +c.payAmt,
+    payDate: c.payDate, rate: +c.rate, weeks: +(c.weeks||CFG.weeks)
+  };
+  EXP = data.exp || data.expenses || [];
+  // normalize field name
+  EXP = EXP.map(e => ({...e, wdate: e.wdate || e.d}));
+  input.value = '';
+  alert(`Iceri aktarildi: ${r.imported} masraf.`);
+  renderTab();
+};
+
+// ─ Boot ───────────────────────────────────────────────────────────────────
+loadData();
+// Service worker: yalnızca aynı kaynaktan host ediliyorsa ve sw.js varsa kayıt ol.
+// Dosyayi direkt (file://) acarken kayit zaten yapilmaz — sorun degil.
+</script>
+</body>
+</html>
