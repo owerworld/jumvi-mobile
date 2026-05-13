@@ -318,6 +318,7 @@ const SYNC = {
   status: '⊘',
   _pushTimer: null,
   _busy: false,
+  _suspend: false,   // true iken yazma islemleri push tetiklemez
   _onStatus: null,
 
   async pull() {
@@ -522,7 +523,7 @@ async function api(method, path, data) {
   const _api = api;
   api = async function(method, path, data) {
     const res = await _api(method, path, data);
-    if ((method === 'POST' || method === 'DELETE') && path !== '/api/import') {
+    if (!SYNC._suspend && (method === 'POST' || method === 'DELETE') && path !== '/api/import') {
       SYNC.push();
     }
     return res;
@@ -1308,11 +1309,24 @@ function renderSettings() {
 
 window.saveSyncUrl = async () => {
   const u = document.getElementById('s-syncurl')?.value.trim() || '';
-  await api('POST', '/api/cfg', {sync_url: u});
-  CFG.sync_url = u;
   const ok = document.getElementById('s-sync-ok');
-  if (ok) { ok.textContent = u ? '✓ URL kaydedildi, veri cekiliyor...' : '✓ Senkron kapatildi'; }
-  if (u) { await SYNC.pull(); await loadData(); }
+  // YAZMA TETIKLEMEDEN sync_url'i kaydet — yoksa telefonun eski verisi buluta ezilir
+  SYNC._suspend = true;
+  try {
+    clearTimeout(SYNC._pushTimer); SYNC._pushTimer = null;  // bekleyen push'u iptal et
+    const cfg = LS.get('cfg', {}); cfg.sync_url = u; LS.set('cfg', cfg);
+    CFG.sync_url = u;
+    if (ok) ok.textContent = u ? '⏳ URL kaydedildi, sunucudan veri cekiliyor...' : '✓ Senkron kapatildi';
+    if (u) {
+      // Yerel _ts'i sifirla → uzaktaki kesin uygulansin
+      LS.set('_ts', 0);
+      const got = await SYNC.pull();
+      if (ok) ok.textContent = got ? '✓ Mac\'in verileri yuklendi!' : '⚠ URL\'de daha yeni veri yok (URL dogru mu?)';
+    }
+  } finally {
+    SYNC._suspend = false;
+  }
+  await loadData();
 };
 
 window.createSyncLink = async () => {
@@ -1331,10 +1345,15 @@ window.createSyncLink = async () => {
 window.forceSyncPull = async () => {
   const ok = document.getElementById('s-sync-ok');
   if (ok) ok.textContent = '⬇ Cekiyor...';
-  // Yerel timestamp'i sifirla ki uzaktaki kesin uygulansin
-  LS.set('_ts', 0);
-  const updated = await SYNC.pull();
-  if (ok) ok.textContent = updated ? '✓ Yeni veriler yuklendi' : '✓ Buluttakinden farkli degil';
+  SYNC._suspend = true;
+  try {
+    clearTimeout(SYNC._pushTimer); SYNC._pushTimer = null;
+    LS.set('_ts', 0);
+    const updated = await SYNC.pull();
+    if (ok) ok.textContent = updated ? '✓ Yeni veriler yuklendi' : '⚠ Buluttakinden farkli degil';
+  } finally {
+    SYNC._suspend = false;
+  }
   await loadData();
 };
 
