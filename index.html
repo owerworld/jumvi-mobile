@@ -265,6 +265,7 @@ tr.mth td{padding:4px 14px;background:rgba(79,179,255,.04);border-top:1px solid 
   <div class="hdr-r">
     <span class="kbadge" id="kbadge">Kur: 44 ₺/$</span>
     <span class="kbadge" id="gbadge" style="color:var(--amber)">⬡ —</span>
+    <span class="kbadge" id="sbadge" title="Bulut senkron durumu" style="color:var(--t3);cursor:pointer" onclick="switchTab('ayarlar')">☁ ⊘</span>
     <button class="hbtn" style="color:var(--green);border-color:rgba(151,215,0,.3)" onclick="downloadCal()">📅 Takvim</button>
     <button class="hbtn" style="color:var(--amber);border-color:rgba(240,168,40,.3)" onclick="downloadPdf()">📄 PDF</button>
     <button class="hbtn" onclick="doExport()">↓ JSON</button>
@@ -304,11 +305,99 @@ const MS_META = {
   ms8:{label:'Ilk Organik Review',icon:'⭐'},
 };
 
-// ─ localStorage Adapter (sunucusuz) ──────────────────────────────────────
+// ─ localStorage Adapter + Cloud Sync ─────────────────────────────────────
 
 const LS = {
   get(k, d) { try { return JSON.parse(localStorage.getItem('jumvi_'+k)) ?? d; } catch { return d; } },
   set(k, v) { localStorage.setItem('jumvi_'+k, JSON.stringify(v)); },
+};
+
+// Cloud sync (jsonblob.com) — Mac ile telefon arasinda paylasilan blob
+const SYNC = {
+  url() { return (LS.get('cfg', {}) || {}).sync_url || ''; },
+  status: '⊘',
+  _pushTimer: null,
+  _busy: false,
+  _onStatus: null,
+
+  async pull() {
+    const u = this.url(); if (!u) { this.status='⊘'; this._onStatus?.(); return false; }
+    try {
+      this._busy = true; this.status='↓'; this._onStatus?.();
+      const r = await fetch(u, {cache:'no-store'});
+      if (!r.ok) throw new Error('http '+r.status);
+      const d = await r.json();
+      const localTs = LS.get('_ts', 0);
+      if (d && d._ts && d._ts > localTs) {
+        // sync_url'i koru, yoksa kendini siler
+        const myUrl = u;
+        if (d.cfg)        LS.set('cfg', {...d.cfg, sync_url: myUrl});
+        if (d.exp)        LS.set('exp', d.exp);
+        if (d.milestones) LS.set('milestones', d.milestones);
+        if (d.recurring)  LS.set('recurring', d.recurring);
+        LS.set('_ts', d._ts);
+        this.status='✓'; this._onStatus?.();
+        return true;
+      }
+      this.status='✓'; this._onStatus?.();
+      return false;
+    } catch (e) {
+      console.warn('sync pull failed', e); this.status='!'; this._onStatus?.();
+      return false;
+    } finally { this._busy = false; }
+  },
+
+  push() {
+    // debounce: 1.5 sn icinde tekrar cagrilirsa son cagriya kadar bekle
+    clearTimeout(this._pushTimer);
+    this._pushTimer = setTimeout(() => this._doPush(), 1500);
+  },
+
+  async _doPush() {
+    const u = this.url(); if (!u) return;
+    const ts = Date.now();
+    LS.set('_ts', ts);
+    const payload = {
+      _v: 1, _ts: ts,
+      cfg: LS.get('cfg', {}),
+      exp: LS.get('exp', []),
+      milestones: LS.get('milestones', []),
+      recurring: LS.get('recurring', []),
+    };
+    try {
+      this.status='↑'; this._onStatus?.();
+      const r = await fetch(u, {
+        method:'PUT', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(payload),
+      });
+      if (!r.ok) throw new Error('http '+r.status);
+      this.status='✓'; this._onStatus?.();
+    } catch (e) {
+      console.warn('sync push failed', e); this.status='!'; this._onStatus?.();
+    }
+  },
+
+  async createNew() {
+    // Mevcut localStorage durumunu kullanarak yeni blob olustur
+    const ts = Date.now();
+    const payload = {
+      _v: 1, _ts: ts,
+      cfg: LS.get('cfg', {}),
+      exp: LS.get('exp', []),
+      milestones: LS.get('milestones', []),
+      recurring: LS.get('recurring', []),
+    };
+    const r = await fetch('https://jsonblob.com/api/jsonBlob', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload),
+    });
+    const loc = r.headers.get('Location') || r.headers.get('location');
+    if (!loc) throw new Error('Location header yok');
+    const fullUrl = 'https://jsonblob.com' + loc;
+    const cfg = LS.get('cfg', {}); cfg.sync_url = fullUrl; LS.set('cfg', cfg);
+    LS.set('_ts', ts);
+    return fullUrl;
+  },
 };
 
 // İlk çalıştırmada varsayılanlar
@@ -428,7 +517,21 @@ async function api(method, path, data) {
   return {ok:false};
 }
 
+// Yaziya neden olan tum POST'lardan sonra senkron tetikle
+(function wrapApi() {
+  const _api = api;
+  api = async function(method, path, data) {
+    const res = await _api(method, path, data);
+    if ((method === 'POST' || method === 'DELETE') && path !== '/api/import') {
+      SYNC.push();
+    }
+    return res;
+  };
+})();
+
 async function loadData() {
+  // Once buluttan cek (varsa)
+  if (SYNC.url()) { await SYNC.pull(); }
   const [d, rateRes, ms, rec, goldRes] = await Promise.all([
     api('GET', '/api/data'),
     api('GET', '/api/rate').catch(() => null),
@@ -445,6 +548,7 @@ async function loadData() {
     bot_chat_id: c.bot_chat_id||'',
     goldQty:   +(c.goldQty  ||0),
     goldPrice: +(c.goldPrice||0),
+    sync_url:   c.sync_url || '',
   };
   if (rateRes?.ok && rateRes.rate) {
     CFG.rate = rateRes.rate;
@@ -476,7 +580,21 @@ function updateRateBadge(live) {
       gb.title = 'Çeyrek altın alış fiyatı (canlı)';
     }
   }
+  updateSyncBadge();
 }
+
+function updateSyncBadge() {
+  const sb = document.getElementById('sbadge');
+  if (!sb) return;
+  const u = (CFG.sync_url || (LS.get('cfg',{})||{}).sync_url) || '';
+  const map = {'↓':'↓ Cekiyor','↑':'↑ Gonderiyor','✓':'✓ Senkron','!':'! Hata','⊘':'⊘ Kapali'};
+  sb.textContent = '☁ ' + (map[SYNC.status] || SYNC.status);
+  sb.style.color = !u ? 'var(--t3)' : SYNC.status === '✓' ? 'var(--green)'
+                  : SYNC.status === '!' ? 'var(--red)' : 'var(--amber)';
+  sb.title = u ? 'Senkron URL: ' + u : 'Senkron kapali — Ayarlar\'a git';
+}
+// SYNC durumu degisince badge'i guncelle
+SYNC._onStatus = updateSyncBadge;
 
 // ─ Compute ────────────────────────────────────────────────────────────────
 
@@ -1164,20 +1282,68 @@ function renderSettings() {
     </div>
     <div class="sc" style="grid-column:1/-1">
       <div class="sc-ttl" style="display:flex;justify-content:space-between;align-items:center">
-        <span>Telegram Bot</span>
-        <span style="font-size:10px;color:var(--green);font-family:var(--mono)">● Aktif</span>
+        <span>☁ Bulut Senkron (Mac ↔ Telefon)</span>
+        <span id="sync-state" style="font-size:11px;color:var(--green);font-family:var(--mono)">${SYNC.status}</span>
       </div>
       <div style="font-size:12px;color:var(--t3);margin-bottom:14px;line-height:1.7">
-        Bota <b style="color:var(--t2)">/start</b> yaz → Chat ID'ni al → aşağıya gir (güvenlik için sadece sana cevap verir).<br>
-        Komutlar: /bakiye &nbsp;/hafta &nbsp;/ozet &nbsp;/plan &nbsp;/kur &nbsp;/ekle
+        Mac uygulamasi yeni bir senkron baglantisi olusturur, gosterdigi URL'i buraya yapistir → her iki cihaz da ayni verilere erisir.<br>
+        Veriler <b style="color:var(--t2)">jsonblob.com</b>'da tutulur. URL'i bilen herkes okuyup yazabilir, paylasma.
       </div>
-      <div class="sfg" style="max-width:280px"><label>Chat ID</label>
-        <input type="text" id="s-chatid" value="${CFG.bot_chat_id||''}" placeholder="BotFather'dan /start yaz"></div>
-      <button class="sbtn" onclick="saveChatId()">Kaydet</button>
-      <div class="sok" id="s-cid-ok"></div>
+      <div class="sfg"><label>Senkron URL'si</label>
+        <input type="text" id="s-syncurl" value="${(CFG.sync_url||'').replace(/"/g,'&quot;')}" placeholder="https://jsonblob.com/api/jsonBlob/..." style="font-family:var(--mono);font-size:11px"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <button class="sbtn" onclick="saveSyncUrl()">URL'i Kaydet</button>
+        <button class="sbtn" style="background:var(--green)" onclick="createSyncLink()">Yeni Baglanti Olustur</button>
+        <button class="sbtn" style="background:transparent;color:var(--t2);border:1px solid var(--bd3)" onclick="forceSyncPull()">⬇ Sunucudan Cek</button>
+        <button class="sbtn" style="background:transparent;color:var(--t2);border:1px solid var(--bd3)" onclick="forceSyncPush()">⬆ Sunucuya Gonder</button>
+      </div>
+      <div class="sok" id="s-sync-ok"></div>
     </div>
   </div>`;
+  SYNC._onStatus = () => {
+    const el = document.getElementById('sync-state');
+    if (el) el.textContent = SYNC.status;
+  };
 }
+
+window.saveSyncUrl = async () => {
+  const u = document.getElementById('s-syncurl')?.value.trim() || '';
+  await api('POST', '/api/cfg', {sync_url: u});
+  CFG.sync_url = u;
+  const ok = document.getElementById('s-sync-ok');
+  if (ok) { ok.textContent = u ? '✓ URL kaydedildi, veri cekiliyor...' : '✓ Senkron kapatildi'; }
+  if (u) { await SYNC.pull(); await loadData(); }
+};
+
+window.createSyncLink = async () => {
+  const ok = document.getElementById('s-sync-ok');
+  try {
+    if (ok) ok.textContent = '⏳ Olusturuluyor...';
+    const url = await SYNC.createNew();
+    CFG.sync_url = url;
+    document.getElementById('s-syncurl').value = url;
+    if (ok) ok.innerHTML = '✓ Olusturuldu! URL\'i kopyalayip diger cihaza yapistirin:<br><code style="word-break:break-all;color:var(--blue)">'+url+'</code>';
+  } catch (e) {
+    if (ok) ok.textContent = '✗ Hata: ' + e.message;
+  }
+};
+
+window.forceSyncPull = async () => {
+  const ok = document.getElementById('s-sync-ok');
+  if (ok) ok.textContent = '⬇ Cekiyor...';
+  // Yerel timestamp'i sifirla ki uzaktaki kesin uygulansin
+  LS.set('_ts', 0);
+  const updated = await SYNC.pull();
+  if (ok) ok.textContent = updated ? '✓ Yeni veriler yuklendi' : '✓ Buluttakinden farkli degil';
+  await loadData();
+};
+
+window.forceSyncPush = async () => {
+  const ok = document.getElementById('s-sync-ok');
+  if (ok) ok.textContent = '⬆ Gonderiyor...';
+  await SYNC._doPush();
+  if (ok) ok.textContent = '✓ Buluta gonderildi';
+};
 
 window.goldCalc = () => {
   const q = parseInt(document.getElementById('s-gq')?.value) || 0;
